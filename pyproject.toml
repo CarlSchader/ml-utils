@@ -18,5 +18,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/carlschader/ml_utils"
-Issues = "https://github.com/carlschader/ml_utils/issues"
+Homepage = "https://github.com/carlschader/ml-utils"
+Issues = "https://github.com/carlschader/ml-utils/issues"
