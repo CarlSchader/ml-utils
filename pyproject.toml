@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "carlschader_ml_utils"
+version = "0.0.1"
+authors = [
+  { name="Carl Schader", email="carlschader@gmail.com" },
+]
+description = "A collection of utilities for machine learning projects"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/carlschader/ml_utils"
+Issues = "https://github.com/carlschader/ml_utils/issues"
