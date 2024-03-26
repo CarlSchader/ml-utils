@@ -1,7 +1,7 @@
 import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from src.image_utils.normalize_image_folder import find_image_folder_normalization
+from carlschader_ml_tools.normalize_image_folder import find_image_folder_normalization
 import argparse, torch
 
 if __name__ == '__main__':
