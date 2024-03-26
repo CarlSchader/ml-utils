@@ -1,46 +1,53 @@
-import os, argparse, imghdr
-from PIL import Image
+import argparse
+import torchvision.transforms as transforms
+from torchvision import datasets
 import torch
 
-def find_normalization(path, crop_size=224, gray_scale=False):
-    r_mean = 0
-    g_mean = 0
-    b_mean = 0
 
-    r_std = 0
-    g_std = 0
-    b_std = 0
+def find_image_folder_normalization(path, crop_size=224, batch_size=64, total_batches=None, device=torch.device('cpu')):
+    transform = transforms.Compose([
+        transforms.Resize((crop_size, crop_size)),
+        transforms.ToTensor(),
+    ])
 
+    dataset = datasets.ImageFolder(path, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    means = torch.zeros(3).to(device)
+    pixel_count = 0
     count = 0
 
-    # recursively find all images in the directory
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            # if file is a valid image of any format
-            if imghdr.what(os.path.join(root, file)) is not None:
-                img = Image.open(os.path.join(root, file))
+    print('Calculating means...')
+    for inputs, _ in loader:
+        inputs = inputs.to(device)
+        means += inputs.sum(dim=(0, 2, 3))
 
-                if not gray_scale:
-                    img = img.convert('RGB')
-                else:
-                    img = img.convert('L')
+        count += 1
+        pixel_count += inputs.size(0) * inputs.size(2) * inputs.size(3)
 
-                img = img.resize((crop_size, crop_size))
+        print(f"Processed {count}/{len(loader)}", end='\r')
 
-                img = torch.tensor(img).float()
+        if total_batches is not None and count >= total_batches:
+            break
 
-                r_mean += img[:,:,0].mean()
-                g_mean += img[:,:,1].mean()
-                b_mean += img[:,:,2].mean()
+    means /= pixel_count
 
-                r_std += img[:,:,0].std()
-                g_std += img[:,:,1].std()
-                b_std += img[:,:,2].std()
+    stds = torch.zeros(3).to(device)
+    count = 0
 
-                count += 1
+    print('Calculating standard deviations...')
+    for inputs, _ in loader:
+        inputs = inputs.to(device)
+        stds += ((inputs - means[None, :, None, None]) ** 2).sum(dim=(0, 2, 3))
 
+        count += 1
+        print(f"Processed {count}/{len(loader)}", end='\r')
 
-    return ((r_mean, g_mean, b_mean), (r_std, g_std, b_std))
+        if total_batches is not None and count >= total_batches:
+            break
+
+    stds = torch.sqrt(stds / pixel_count)
+    return means, stds
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculates means and standard deviations for RGB values of images in a directory')
@@ -51,9 +58,19 @@ if __name__ == '__main__':
 
     parser.add_argument('--gray_scale', default=False, action='store_true', help='Use this flag if the images are grayscale')
 
+    parser.add_argument('--batch_size', type=int, default=64, help='Batch size to use for calculating the means and standard deviations')
+
+    parser.add_argument('--total_batches', type=int, default=None, help='Total number of batches to use for calculating the means and standard deviations (default: use all batches)')
+
     args = parser.parse_args()
 
-    means, stds = find_normalization(args.path, crop_size=args.crop_size, gray_scale=args.gray_scale)
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
+
+
+    means, stds = find_image_folder_normalization(args.path, crop_size=args.crop_size, batch_size=args.batch_size, total_batches=args.total_batches, device=device)
 
     print(f'Means: {means}')
     print(f'Standard Deviations: {stds}')
