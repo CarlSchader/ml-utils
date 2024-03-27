@@ -5,7 +5,7 @@ from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 from torchvision import datasets
 
-def embed_image_folder(
+def embed_image_folder_averages(
     encoder, 
     data_folder,
     save_dir,
@@ -26,7 +26,7 @@ def embed_image_folder(
 
     # get output shape of model by sampling a single image
     sample_image, _ = dataset[0]
-    sample_image = sample_image.unsqueeze(0)
+    sample_image = sample_image.unsqueeze(0).to(device)
     output_shape = encoder(sample_image).shape[1:]
 
     with torch.no_grad():
