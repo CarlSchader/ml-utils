@@ -5,7 +5,22 @@ from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 from torchvision import datasets
 
-def embed_image_folder_averages(
+# def embed_image(
+#     encoder,
+#     image_path,
+#     transform=torchvision.transforms.Compose([
+#         torchvision.transforms.Resize((244, 244)),
+#         torchvision.transforms.ToTensor(),
+#         torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+#     ]),
+#     device=torch.device('cpu'),
+#     ):
+#     image = torchvision.io.read_image(image_path)
+#     image = transform(image).unsqueeze(0).to(device)
+#     with torch.no_grad():
+#         return encoder(image)
+
+def embed_image_folder(
     encoder, 
     data_folder,
     save_dir,
@@ -15,9 +30,10 @@ def embed_image_folder_averages(
         torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
     ]),
     batch_size=32,
+    averages_only=False,
     device=torch.device('cpu'),
     verbose=False,
-):
+    ):
     dataset = ImageFolder(root=data_folder, transform=transform)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
     
@@ -30,11 +46,13 @@ def embed_image_folder_averages(
     output_shape = encoder(sample_image).shape[1:]
 
     with torch.no_grad():
-        current_emb = torch.zeros(output_shape)
+        class_average = torch.zeros(output_shape)
+        class_stack = []
         current_label = 0
         current_count = 0
         batches = 0
         total_batches = len(data_loader)
+
         for images, labels in data_loader:
             images = images.to(device)
             embeddings = encoder(images)
@@ -42,16 +60,25 @@ def embed_image_folder_averages(
             for idx, emb in enumerate(embeddings):
                 label = labels[idx].item()
                 class_name = dataset.classes[label]
-                if label != current_label:
-                    class_average = current_emb / current_count
-                    torch.save(class_average, os.path.join(save_dir, f'{class_name}.pth'))
-                    current_emb = torch.zeros(output_shape)
-                    current_label = label
-                    current_count = 0
 
-                current_emb += emb
+                if averages_only:
+                    if label != current_label:
+                        class_average = class_average / current_count
+                        torch.save(class_average, os.path.join(save_dir, f'{class_name}.pth'))
+                        class_average = torch.zeros(output_shape)
+                        current_count = 0
+                        current_label = label
+                    class_average += emb
+                else:
+                    if label != current_label:
+                        class_stack = torch.stack(class_stack, dim=0)
+                        torch.save(class_stack, os.path.join(save_dir, f'{class_name}.pth'))
+                        class_stack = []
+                        current_count = 0
+                        current_label = label
+                    class_stack.append(emb)
+
                 current_count += 1
-
 
             batches += 1
             if verbose:
