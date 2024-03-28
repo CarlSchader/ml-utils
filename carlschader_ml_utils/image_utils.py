@@ -59,10 +59,10 @@ def embed_image_folder(
             embeddings = embeddings.cpu()
             for idx, emb in enumerate(embeddings):
                 label = labels[idx].item()
-                class_name = dataset.classes[label]
 
                 if averages_only:
                     if label != current_label:
+                        class_name = dataset.classes[current_label]
                         class_average = class_average / current_count
                         torch.save(class_average, os.path.join(save_dir, f'{class_name}.pth'))
                         class_average = torch.zeros(output_shape)
@@ -71,6 +71,7 @@ def embed_image_folder(
                     class_average += emb
                 else:
                     if label != current_label:
+                        class_name = dataset.classes[current_label]
                         class_stack = torch.stack(class_stack, dim=0)
                         torch.save(class_stack, os.path.join(save_dir, f'{class_name}.pth'))
                         class_stack = []
