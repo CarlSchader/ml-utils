@@ -34,7 +34,7 @@ def embed_image_folder(
     device=torch.device('cpu'),
     verbose=False,
     ):
-    dataset = ImageFolder(root=data_folder, transform=transform, allow_empty=True)
+    dataset = ImageFolder(root=data_folder, transform=transform)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
     
     shutil.rmtree(save_dir, ignore_errors=True)
@@ -91,7 +91,7 @@ def find_image_folder_normalization(path, crop_size=224, batch_size=64, total_ba
         transforms.ToTensor(),
     ])
 
-    dataset = datasets.ImageFolder(path, transform=transform, allow_empty=True)
+    dataset = datasets.ImageFolder(path, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     means = torch.zeros(3).to(device)
