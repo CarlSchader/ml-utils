@@ -73,7 +73,11 @@ def embed_image_folder(
                     if label != current_label:
                         class_name = dataset.classes[current_label]
                         class_stack = torch.stack(class_stack, dim=0)
-                        torch.save(class_stack, os.path.join(save_dir, f'{class_name}.pth'))
+                        if not os.path.exists(os.path.join(save_dir, class_name)):
+                            os.mkdir(os.path.join(save_dir, class_name))
+                        for k in range(class_stack.shape[0]):
+                            torch.save(class_stack[k], os.path.join(save_dir, class_name, f'{k}.pth'))
+                        # torch.save(class_stack, os.path.join(save_dir, f'{class_name}.pth'))
                         class_stack = []
                         current_count = 0
                         current_label = label
