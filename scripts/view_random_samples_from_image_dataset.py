@@ -23,8 +23,8 @@ while True:
     button = Button(ax_button, 'Next')
     button.on_clicked(lambda _: plt.close())
     ax_button_2 = plt.axes([0.1, 0.05, 0.1, 0.075])
-    button = Button(kill_button, 'Kill')
-    button.on_clicked(lambda _: exit())
+    kill_button = Button(ax_button_2, 'Stop')
+    kill_button.on_clicked(lambda _: exit())
     plt.show()
 
 
