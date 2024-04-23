@@ -5,6 +5,8 @@ from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 from torchvision import datasets
 
+DEFAULT_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 # def embed_image(
 #     encoder,
 #     image_path,
@@ -32,7 +34,7 @@ def embed_image_folder(
     batch_size=32,
     averages_only=False,
     num_workers=max(multiprocessing.cpu_count() - 1, 0),
-    device=torch.device('cpu'),
+    device=DEFAULT_DEVICE,
     verbose=False,
     ):
     dataset = ImageFolder(root=data_folder, transform=transform)
