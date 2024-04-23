@@ -5,16 +5,16 @@ from carlschader_ml_utils.embedding_utils import _heap_vote
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-parser = argparse.ArgumentParser(description='Given a target dataset folder of embeddings, classify them using knn against another dataset folder of embeddings.')
-parser.add_argument('embedding_test_set_path', type=str, help='Path to the folder of embeddings')
-parser.add_argument('embedding_dataset_path', type=str, help='Path to the image to classify')
+parser = argparse.ArgumentParser(description='Given an evaluation dataset folder of embeddings, classify them using knn against another dataset folder of embeddings.')
+parser.add_argument('-e', '--embedding_eval_set_path', required=True, type=str, help='Path to the folder of embeddings')
+parser.add_argument('-d', '--embedding_dataset_path', required=True, type=str, help='Path to the image to classify')
 parser.add_argument('-k', type=int, default=5, help='Number of closest images to return')
 parser.add_argument('-tb', '--test-batch-size', type=int, default=8, help='Batch size for the test set')
 parser.add_argument('-b', '--batch-size', type=int, default=32, help='Batch size for the dataset')
 args = parser.parse_args()
 
 dataset_path = args.embedding_dataset_path
-test_set_path = args.embedding_test_set_path
+test_set_path = args.embedding_eval_set_path
 k = args.k
 batch_size = args.batch_size
 test_batch_size = args.test_batch_size

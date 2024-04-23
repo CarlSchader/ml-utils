@@ -1,22 +1,35 @@
 import torch, argparse, sys, os
 from torchvision.datasets import DatasetFolder
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from carlschader_ml_utils.embedding_utils import _heap_vote
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-parser = argparse.ArgumentParser(description='Given a target dataset folder of embeddings, classify them using euclidean distance against another dataset folder of embeddings.')
-parser.add_argument('embedding_test_set_path', type=str, help='Path to the folder of embeddings')
-parser.add_argument('embedding_dataset_path', type=str, help='Path to the image to classify')
-parser.add_argument('-tb', '--test-batch-size', type=int, default=8, help='Batch size for the test set')
+parser = argparse.ArgumentParser(description='Given an evaluation dataset folder of embeddings, classify them using euclidean distance against another dataset folder of embeddings.')
+parser.add_argument('-e' ,'--embedding_eval_set_path', required=True, type=str, help='Path to the folder of embeddings')
+parser.add_argument('-d', '--embedding_dataset_path', required=True, type=str, help='Path to the image to classify')
+parser.add_argument('-t', '--test-batch-size', type=int, default=8, help='Batch size for the test set')
 parser.add_argument('-b', '--batch-size', type=int, default=32, help='Batch size for the dataset')
+parser.add_argument('-m', '--metric', type=str, default='euclidean', help='Distance metric to use')
 args = parser.parse_args()
 
 dataset_path = args.embedding_dataset_path
-test_set_path = args.embedding_test_set_path
-k = args.k
+test_set_path = args.embedding_eval_set_path
 batch_size = args.batch_size
 test_batch_size = args.test_batch_size
+metric = args.metric
+
+def cos_sim(a, b):
+    anorm = a / a.norm(dim=1).unsqueeze(1)
+    bnorm = b / b.norm(dim=1).unsqueeze(1)
+    return 1 - torch.mm(anorm, bnorm.T)
+
+distance_function = None
+if metric == 'euclidean':
+    distance_function = torch.cdist
+elif metric == 'cosine':
+    distance_function = cos_sim
+else:
+    raise ValueError('Invalid distance metric, valid options are euclidean and cosine')
 
 dataset = DatasetFolder(dataset_path, loader=lambda x: torch.load(x), extensions=('.pt', '.pth'))
 test_set = DatasetFolder(test_set_path, loader=lambda x: torch.load(x), extensions=('.pt', '.pth'))
@@ -31,11 +44,14 @@ test_batch_total = len(testloader)
 
 for _, (test_batch, test_targets) in enumerate(testloader):
     test_batch = test_batch.to(device)
+    test_targets = test_targets.to(device)
     min_distances = None
     min_targets = None
     for emb_batch_count, (embeddings, targets) in enumerate(dataloader):
         embeddings = embeddings.to(device)
-        distance_matrix = torch.cdist(test_batch, embeddings)
+        targets = targets.to(device)
+        # distance_matrix = torch.cdist(test_batch, embeddings)
+        distance_matrix = distance_function(test_batch, embeddings)
         batch_mins, min_indices = torch.min(distance_matrix, dim=1)
         batch_min_targets = targets[min_indices]
 
@@ -48,9 +64,10 @@ for _, (test_batch, test_targets) in enumerate(testloader):
             min_targets = torch.where(min_indices, batch_min_targets, min_targets)
         print(f'Batch {emb_batch_count} / {len(dataloader)}', end='\r')
 
-    min_classes = dataset.classes[min_targets]
-
-    batch_correct = torch.sum(torch.eq(min_classes, test_set.classes[test_targets]))
+    min_classes = [dataset.classes[min_targets[i]] for i in range(len(test_targets))]
+    test_classes = [test_set.classes[test_targets[i]] for i in range(len(test_targets))]
+    correct_vec = torch.tensor([1 if dataset.classes[min_targets[i]] == test_set.classes[test_targets[i]] else 0 for i in range(len(test_targets))])
+    batch_correct = torch.sum(correct_vec).item()
     batch_total = len(test_targets)
     
     correct += batch_correct

@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, multiprocessing
 import torch
 import torchvision
 from torchvision.datasets import ImageFolder
@@ -31,11 +31,12 @@ def embed_image_folder(
     ]),
     batch_size=32,
     averages_only=False,
+    num_workers=max(multiprocessing.cpu_count() - 1, 0),
     device=torch.device('cpu'),
     verbose=False,
     ):
     dataset = ImageFolder(root=data_folder, transform=transform)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False)
     
     shutil.rmtree(save_dir, ignore_errors=True)
     os.mkdir(save_dir)
