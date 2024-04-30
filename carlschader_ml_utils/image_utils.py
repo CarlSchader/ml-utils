@@ -84,7 +84,6 @@ def embed_image_folder(
                             os.mkdir(os.path.join(save_dir, class_name))
                         for k in range(class_stack.shape[0]):
                             torch.save(class_stack[k], os.path.join(save_dir, class_name, f'{k}.pth'))
-                        # torch.save(class_stack, os.path.join(save_dir, f'{class_name}.pth'))
                         class_stack = []
                         current_count = 0
                         current_label = label
@@ -95,6 +94,19 @@ def embed_image_folder(
             batches += 1
             if verbose:
                 print(f'Processed batch... {batches}/{total_batches}', end='\r')
+
+        # save last class
+        if averages_only:
+            class_name = dataset.classes[current_label]
+            class_average = class_average / current_count
+            torch.save(class_average, os.path.join(save_dir, class_name, 'average.pth'))
+        else:
+            class_name = dataset.classes[current_label]
+            class_stack = torch.stack(class_stack, dim=0)
+            if not os.path.exists(os.path.join(save_dir, class_name)):
+                os.mkdir(os.path.join(save_dir, class_name))
+            for k in range(class_stack.shape[0]):
+                torch.save(class_stack[k], os.path.join(save_dir, class_name, f'{k}.pth'))
 
 def find_image_folder_normalization(path, crop_size=224, batch_size=64, total_batches=None, device=torch.device('cpu'), verbose=False):
     transform = transforms.Compose([

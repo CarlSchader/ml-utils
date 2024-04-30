@@ -7,9 +7,10 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 parser = argparse.ArgumentParser(description='Given an evaluation dataset folder of embeddings, classify them using euclidean distance against another dataset folder of embeddings.')
 parser.add_argument('-e' ,'--embedding_eval_set_path', required=True, type=str, help='Path to the folder of embeddings')
 parser.add_argument('-d', '--embedding_dataset_path', required=True, type=str, help='Path to the image to classify')
-parser.add_argument('-t', '--test-batch-size', type=int, default=8, help='Batch size for the test set')
+parser.add_argument('-t', '--test-batch-size', type=int, default=32, help='Batch size for the test set')
 parser.add_argument('-b', '--batch-size', type=int, default=32, help='Batch size for the dataset')
 parser.add_argument('-m', '--metric', type=str, default='euclidean', help='Distance metric to use')
+parser.add_argument('-o', '--output', type=str, default='output.txt', help='Output file to write results to')
 args = parser.parse_args()
 
 dataset_path = args.embedding_dataset_path
