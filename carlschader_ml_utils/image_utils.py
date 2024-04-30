@@ -99,6 +99,8 @@ def embed_image_folder(
         if averages_only:
             class_name = dataset.classes[current_label]
             class_average = class_average / current_count
+            if not os.path.exists(os.path.join(save_dir, class_name)):
+                os.mkdir(os.path.join(save_dir, class_name))
             torch.save(class_average, os.path.join(save_dir, class_name, 'average.pth'))
         else:
             class_name = dataset.classes[current_label]
